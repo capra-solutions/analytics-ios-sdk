@@ -25,16 +25,98 @@ final class EventTracker {
     // Referrer (deep link source, push notification, etc.)
     private var currentReferrer: String?
 
+    // User classification
+    private var userType: UserType = .anonymous
+    private var userSegments: Set<String> = []
+
+    // Pending conversions (sent with next heartbeat like Marfeel)
+    private var pendingConversions: [Conversion] = []
+
+    // Scroll tracker reference
+    private var scrollTracker: ScrollTracker?
+
+    // Heartbeat manager reference (for interaction recording)
+    private weak var heartbeatManager: HeartbeatManager?
+
     init(config: DMBIConfiguration, sessionManager: SessionManager, networkQueue: NetworkQueue) {
         self.config = config
         self.sessionManager = sessionManager
         self.networkQueue = networkQueue
     }
 
+    // MARK: - Configuration
+
+    func setScrollTracker(_ tracker: ScrollTracker) {
+        self.scrollTracker = tracker
+    }
+
+    func setHeartbeatManager(_ manager: HeartbeatManager) {
+        self.heartbeatManager = manager
+    }
+
     // MARK: - User State
 
     func setLoggedIn(_ loggedIn: Bool) {
         self.isLoggedIn = loggedIn
+        if loggedIn && userType == .anonymous {
+            userType = .loggedIn
+        }
+    }
+
+    func setUserType(_ type: UserType) {
+        self.userType = type
+        if type != .anonymous {
+            isLoggedIn = true
+        }
+    }
+
+    // MARK: - User Segments
+
+    func addUserSegment(_ segment: String) {
+        userSegments.insert(segment)
+    }
+
+    func removeUserSegment(_ segment: String) {
+        userSegments.remove(segment)
+    }
+
+    func setUserSegments(_ segments: Set<String>) {
+        userSegments = segments
+    }
+
+    func clearUserSegments() {
+        userSegments.removeAll()
+    }
+
+    func getUserSegments() -> Set<String> {
+        return userSegments
+    }
+
+    // MARK: - Conversions
+
+    func trackConversion(_ conversion: Conversion) {
+        pendingConversions.append(conversion)
+
+        // Also send as immediate event
+        var customData: [String: Any] = [
+            "conversion_id": conversion.id,
+            "conversion_type": conversion.type
+        ]
+        if let value = conversion.value { customData["conversion_value"] = value }
+        if let currency = conversion.currency { customData["conversion_currency"] = currency }
+        if let properties = conversion.properties {
+            for (key, value) in properties {
+                customData[key] = value
+            }
+        }
+
+        let event = createEvent(
+            eventType: "conversion",
+            pageUrl: currentScreen?.url ?? "app://conversion",
+            pageTitle: currentScreen?.title,
+            customData: customData
+        )
+        enqueue(event)
     }
 
     // MARK: - UTM & Referrer
@@ -54,9 +136,18 @@ final class EventTracker {
         self.currentReferrer = url.scheme ?? "deeplink"
     }
 
+    // MARK: - User Interaction (for dynamic heartbeat)
+
+    func recordInteraction() {
+        heartbeatManager?.recordInteraction()
+    }
+
     // MARK: - Screen Tracking
 
     func trackScreen(name: String, url: String, title: String?, metadata: ScreenMetadata? = nil) {
+        // Record interaction
+        recordInteraction()
+
         // Track exit from previous screen if any
         if let previous = currentScreen {
             trackScreenExit(
@@ -74,6 +165,9 @@ final class EventTracker {
         // Record new screen
         currentScreen = (name, url, title, metadata)
         screenEntryTime = Date()
+
+        // Reset scroll tracking for new screen
+        scrollTracker?.reset()
 
         // Format published date if present
         var publishedDateString: String? = nil
@@ -96,24 +190,34 @@ final class EventTracker {
             contentType: metadata?.contentType
         )
         enqueue(event)
-
-        // Clear UTM after first screen view (single attribution)
-        // Keep referrer for the session
     }
 
     private func trackScreenExit(name: String, url: String, title: String?, metadata: ScreenMetadata?) {
         guard let entryTime = screenEntryTime else { return }
 
         let duration = Int(Date().timeIntervalSince(entryTime))
+        let scrollDepth = scrollTracker?.maxScrollDepth
 
         let event = createEvent(
             eventType: "screen_exit",
             pageUrl: url,
             pageTitle: title,
             duration: duration,
+            scrollDepth: scrollDepth,
             customData: ["screen_name": name]
         )
         enqueue(event)
+    }
+
+    // MARK: - Scroll Tracking
+
+    func reportScrollDepth(_ percent: Int) {
+        scrollTracker?.reportScrollDepth(percent)
+        recordInteraction()
+    }
+
+    func getCurrentScrollDepth() -> Int {
+        return scrollTracker?.maxScrollDepth ?? 0
     }
 
     // MARK: - App Lifecycle
@@ -150,6 +254,7 @@ final class EventTracker {
     // MARK: - Video Tracking
 
     func trackVideoImpression(videoId: String, title: String?, duration: Float?) {
+        recordInteraction()
         let event = createEvent(
             eventType: "video_impression",
             pageUrl: currentScreen?.url ?? "app://video",
@@ -162,6 +267,7 @@ final class EventTracker {
     }
 
     func trackVideoPlay(videoId: String, title: String?, duration: Float?, position: Float?) {
+        recordInteraction()
         let event = createEvent(
             eventType: "video_play",
             pageUrl: currentScreen?.url ?? "app://video",
@@ -175,6 +281,7 @@ final class EventTracker {
     }
 
     func trackVideoProgress(videoId: String, duration: Float?, position: Float?, percent: Int) {
+        recordInteraction()
         let event = createEvent(
             eventType: "video_quartile",
             pageUrl: currentScreen?.url ?? "app://video",
@@ -188,6 +295,7 @@ final class EventTracker {
     }
 
     func trackVideoPause(videoId: String, position: Float?, percent: Int?) {
+        recordInteraction()
         let event = createEvent(
             eventType: "video_pause",
             pageUrl: currentScreen?.url ?? "app://video",
@@ -200,6 +308,7 @@ final class EventTracker {
     }
 
     func trackVideoComplete(videoId: String, duration: Float?) {
+        recordInteraction()
         let event = createEvent(
             eventType: "video_complete",
             pageUrl: currentScreen?.url ?? "app://video",
@@ -246,11 +355,27 @@ final class EventTracker {
 
     // MARK: - Heartbeat
 
-    func trackHeartbeat() {
+    func trackHeartbeat(activeTimeSeconds: Int, pingCounter: Int) {
+        // Include pending conversions in heartbeat (like Marfeel)
+        var customData: [String: Any]? = nil
+
+        if !pendingConversions.isEmpty {
+            let conversions = pendingConversions.map { $0.toDict() }
+            if let data = try? JSONSerialization.data(withJSONObject: conversions),
+               let string = String(data: data, encoding: .utf8) {
+                customData = ["pending_conversions": string]
+            }
+            pendingConversions.removeAll()
+        }
+
         let event = createEvent(
             eventType: "heartbeat",
             pageUrl: currentScreen?.url ?? "app://heartbeat",
-            pageTitle: currentScreen?.title
+            pageTitle: currentScreen?.title,
+            scrollDepth: scrollTracker?.maxScrollDepth,
+            customData: customData,
+            activeTimeSeconds: activeTimeSeconds,
+            pingCounter: pingCounter
         )
         enqueue(event)
     }
@@ -258,6 +383,7 @@ final class EventTracker {
     // MARK: - Custom Events
 
     func trackCustomEvent(name: String, properties: [String: Any]?) {
+        recordInteraction()
         let event = createEvent(
             eventType: name,
             pageUrl: currentScreen?.url ?? "app://custom",
@@ -311,7 +437,10 @@ final class EventTracker {
         articleSection: String? = nil,
         articleKeywords: [String]? = nil,
         publishedDate: String? = nil,
-        contentType: String? = nil
+        contentType: String? = nil,
+        // Engagement
+        activeTimeSeconds: Int? = nil,
+        pingCounter: Int? = nil
     ) -> AnalyticsEvent {
         sessionManager.updateActivity()
 
@@ -363,7 +492,13 @@ final class EventTracker {
             utmMedium: currentUTM?.medium,
             utmCampaign: currentUTM?.campaign,
             utmContent: currentUTM?.content,
-            utmTerm: currentUTM?.term
+            utmTerm: currentUTM?.term,
+            // Engagement
+            activeTimeSeconds: activeTimeSeconds,
+            pingCounter: pingCounter,
+            // User
+            userType: userType.rawValue,
+            userSegments: userSegments.isEmpty ? nil : Array(userSegments)
         )
     }
 

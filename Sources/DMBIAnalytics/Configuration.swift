@@ -8,8 +8,14 @@ public struct DMBIConfiguration {
     /// Analytics endpoint URL
     public let endpoint: URL
 
-    /// Heartbeat interval in seconds (default: 60)
-    public var heartbeatInterval: TimeInterval = 60
+    /// Heartbeat interval in seconds (default: 30)
+    public var heartbeatInterval: TimeInterval = 30
+
+    /// Maximum heartbeat interval when user is inactive (default: 120)
+    public var maxHeartbeatInterval: TimeInterval = 120
+
+    /// Time without interaction before increasing heartbeat interval (default: 30)
+    public var inactivityThreshold: TimeInterval = 30
 
     /// Batch size for event sending (default: 10)
     public var batchSize: Int = 10
@@ -31,6 +37,9 @@ public struct DMBIConfiguration {
 
     /// Days to keep offline events (default: 7)
     public var offlineRetentionDays: Int = 7
+
+    /// Enable automatic scroll tracking when possible (default: true)
+    public var autoScrollTracking: Bool = true
 
     public init(siteId: String, endpoint: String) {
         self.siteId = siteId

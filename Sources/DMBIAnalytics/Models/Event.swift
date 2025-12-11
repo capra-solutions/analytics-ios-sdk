@@ -47,6 +47,14 @@ public struct AnalyticsEvent: Codable {
     public let utmContent: String?
     public let utmTerm: String?
 
+    // Engagement metrics
+    public let activeTimeSeconds: Int?
+    public let pingCounter: Int?
+
+    // User classification
+    public let userType: String?
+    public let userSegments: [String]?
+
     enum CodingKeys: String, CodingKey {
         case siteId = "site_id"
         case sessionId = "session_id"
@@ -86,6 +94,12 @@ public struct AnalyticsEvent: Codable {
         case utmCampaign = "utm_campaign"
         case utmContent = "utm_content"
         case utmTerm = "utm_term"
+        // Engagement
+        case activeTimeSeconds = "active_time_seconds"
+        case pingCounter = "ping_counter"
+        // User
+        case userType = "user_type"
+        case userSegments = "user_segments"
     }
 
     public init(
@@ -122,7 +136,11 @@ public struct AnalyticsEvent: Codable {
         utmMedium: String? = nil,
         utmCampaign: String? = nil,
         utmContent: String? = nil,
-        utmTerm: String? = nil
+        utmTerm: String? = nil,
+        activeTimeSeconds: Int? = nil,
+        pingCounter: Int? = nil,
+        userType: String? = nil,
+        userSegments: [String]? = nil
     ) {
         self.siteId = siteId
         self.sessionId = sessionId
@@ -158,6 +176,10 @@ public struct AnalyticsEvent: Codable {
         self.utmCampaign = utmCampaign
         self.utmContent = utmContent
         self.utmTerm = utmTerm
+        self.activeTimeSeconds = activeTimeSeconds
+        self.pingCounter = pingCounter
+        self.userType = userType
+        self.userSegments = userSegments
     }
 }
 
@@ -249,5 +271,56 @@ struct StoredEvent: Codable {
         self.event = event
         self.createdAt = Date()
         self.retryCount = 0
+    }
+}
+
+/// User type classification (similar to Marfeel)
+public enum UserType: String {
+    case anonymous = "anonymous"
+    case loggedIn = "logged"
+    case subscriber = "subscriber"
+    case premium = "premium"
+}
+
+/// Conversion event for tracking user actions/goals
+public struct Conversion {
+    /// Unique conversion identifier
+    public let id: String
+
+    /// Conversion type (e.g., "subscription", "registration", "purchase")
+    public let type: String
+
+    /// Optional conversion value (e.g., revenue amount)
+    public let value: Double?
+
+    /// Optional currency code (e.g., "TRY", "USD")
+    public let currency: String?
+
+    /// Optional additional properties
+    public let properties: [String: Any]?
+
+    public init(
+        id: String,
+        type: String,
+        value: Double? = nil,
+        currency: String? = nil,
+        properties: [String: Any]? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.value = value
+        self.currency = currency
+        self.properties = properties
+    }
+
+    func toDict() -> [String: Any] {
+        var dict: [String: Any] = [
+            "id": id,
+            "type": type
+        ]
+        if let value = value { dict["value"] = value }
+        if let currency = currency { dict["currency"] = currency }
+        if let properties = properties { dict["properties"] = properties }
+        return dict
     }
 }

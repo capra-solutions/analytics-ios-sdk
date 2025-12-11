@@ -68,6 +68,8 @@ final class LifecycleTracker {
 
         if shouldStartNewSession {
             sessionManager?.startNewSession()
+            // Reset heartbeat manager for new session
+            heartbeatManager?.resetSession()
         }
 
         // Track app open

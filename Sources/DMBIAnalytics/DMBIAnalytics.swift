@@ -1,7 +1,19 @@
 import Foundation
+#if os(iOS) || os(tvOS)
+import UIKit
+#endif
 
 /// DMBI Analytics SDK for iOS
 /// Tracks user activity, screen views, video engagement, and push notifications
+///
+/// Features:
+/// - Heartbeat tracking with dynamic intervals
+/// - Active time tracking (excluding background)
+/// - Scroll depth tracking
+/// - User segments and types
+/// - Conversion tracking
+/// - Offline event storage
+/// - Event batching
 public final class DMBIAnalytics {
     /// Shared instance
     public static let shared = DMBIAnalytics()
@@ -13,6 +25,7 @@ public final class DMBIAnalytics {
     private var eventTracker: EventTracker?
     private var heartbeatManager: HeartbeatManager?
     private var lifecycleTracker: LifecycleTracker?
+    private var scrollTracker: ScrollTracker?
 
     private var isConfigured = false
 
@@ -62,14 +75,25 @@ public final class DMBIAnalytics {
         )
         networkQueue?.setOfflineStore(offlineStore!)
 
+        // Initialize scroll tracker
+        scrollTracker = ScrollTracker()
+
         eventTracker = EventTracker(
             config: config,
             sessionManager: sessionManager!,
             networkQueue: networkQueue!
         )
+        eventTracker?.setScrollTracker(scrollTracker!)
 
-        heartbeatManager = HeartbeatManager(interval: config.heartbeatInterval)
+        heartbeatManager = HeartbeatManager(
+            interval: config.heartbeatInterval,
+            maxInterval: config.maxHeartbeatInterval,
+            inactivityThreshold: config.inactivityThreshold
+        )
         heartbeatManager?.setTracker(eventTracker!)
+
+        // Connect heartbeat manager to event tracker for interaction recording
+        eventTracker?.setHeartbeatManager(heartbeatManager!)
 
         lifecycleTracker = LifecycleTracker(sessionTimeout: config.sessionTimeout)
         lifecycleTracker?.configure(
@@ -84,7 +108,7 @@ public final class DMBIAnalytics {
         isConfigured = true
 
         if config.debugLogging {
-            print("[DMBIAnalytics] Configured with siteId: \(config.siteId)")
+            print("[DMBIAnalytics] Configured with siteId: \(config.siteId), heartbeat: \(config.heartbeatInterval)s")
         }
     }
 
@@ -107,6 +131,39 @@ public final class DMBIAnalytics {
     ///   - metadata: Article metadata (authors, section, keywords, etc.)
     public static func trackScreen(name: String, url: String, title: String? = nil, metadata: ScreenMetadata) {
         shared.eventTracker?.trackScreen(name: name, url: url, title: title, metadata: metadata)
+    }
+
+    // MARK: - Scroll Tracking
+
+    /// Get the scroll tracker for attaching to scroll views
+    /// - Returns: ScrollTracker instance
+    public static func getScrollTracker() -> ScrollTracker? {
+        return shared.scrollTracker
+    }
+
+    #if os(iOS) || os(tvOS)
+    /// Attach scroll tracking to a UIScrollView (or subclass like UITableView, UICollectionView)
+    /// - Parameter scrollView: The scroll view to track
+    public static func attachScrollTracking(to scrollView: UIScrollView) {
+        shared.scrollTracker?.attach(to: scrollView)
+    }
+    #endif
+
+    /// Report scroll depth manually (for custom scroll implementations like SwiftUI)
+    /// - Parameter percent: Scroll percentage (0-100)
+    public static func reportScrollDepth(_ percent: Int) {
+        shared.eventTracker?.reportScrollDepth(percent)
+    }
+
+    /// Get current maximum scroll depth
+    /// - Returns: Scroll depth percentage (0-100)
+    public static func getCurrentScrollDepth() -> Int {
+        return shared.eventTracker?.getCurrentScrollDepth() ?? 0
+    }
+
+    /// Detach scroll tracking from current view
+    public static func detachScrollTracking() {
+        shared.scrollTracker?.detach()
     }
 
     // MARK: - Deep Link & UTM Tracking
@@ -133,47 +190,26 @@ public final class DMBIAnalytics {
     // MARK: - Video Tracking
 
     /// Track video impression (video appeared on screen)
-    /// - Parameters:
-    ///   - videoId: Unique video identifier
-    ///   - title: Optional video title
-    ///   - duration: Optional video duration in seconds
     public static func trackVideoImpression(videoId: String, title: String? = nil, duration: Float? = nil) {
         shared.eventTracker?.trackVideoImpression(videoId: videoId, title: title, duration: duration)
     }
 
     /// Track video play start
-    /// - Parameters:
-    ///   - videoId: Unique video identifier
-    ///   - title: Optional video title
-    ///   - duration: Optional video duration in seconds
-    ///   - position: Optional current playback position in seconds
     public static func trackVideoPlay(videoId: String, title: String? = nil, duration: Float? = nil, position: Float? = nil) {
         shared.eventTracker?.trackVideoPlay(videoId: videoId, title: title, duration: duration, position: position)
     }
 
     /// Track video progress (25%, 50%, 75%, etc.)
-    /// - Parameters:
-    ///   - videoId: Unique video identifier
-    ///   - duration: Video duration in seconds
-    ///   - position: Current playback position in seconds
-    ///   - percent: Watch percentage (25, 50, 75, etc.)
     public static func trackVideoProgress(videoId: String, duration: Float? = nil, position: Float? = nil, percent: Int) {
         shared.eventTracker?.trackVideoProgress(videoId: videoId, duration: duration, position: position, percent: percent)
     }
 
     /// Track video pause
-    /// - Parameters:
-    ///   - videoId: Unique video identifier
-    ///   - position: Current playback position in seconds
-    ///   - percent: Watch percentage when paused
     public static func trackVideoPause(videoId: String, position: Float? = nil, percent: Int? = nil) {
         shared.eventTracker?.trackVideoPause(videoId: videoId, position: position, percent: percent)
     }
 
     /// Track video completion
-    /// - Parameters:
-    ///   - videoId: Unique video identifier
-    ///   - duration: Video duration in seconds
     public static func trackVideoComplete(videoId: String, duration: Float? = nil) {
         shared.eventTracker?.trackVideoComplete(videoId: videoId, duration: duration)
     }
@@ -181,19 +217,11 @@ public final class DMBIAnalytics {
     // MARK: - Push Notification Tracking
 
     /// Track push notification received
-    /// - Parameters:
-    ///   - notificationId: Optional notification identifier
-    ///   - title: Optional notification title
-    ///   - campaign: Optional campaign identifier
     public static func trackPushReceived(notificationId: String? = nil, title: String? = nil, campaign: String? = nil) {
         shared.eventTracker?.trackPushReceived(notificationId: notificationId, title: title, campaign: campaign)
     }
 
     /// Track push notification opened
-    /// - Parameters:
-    ///   - notificationId: Optional notification identifier
-    ///   - title: Optional notification title
-    ///   - campaign: Optional campaign identifier
     public static func trackPushOpened(notificationId: String? = nil, title: String? = nil, campaign: String? = nil) {
         shared.eventTracker?.trackPushOpened(notificationId: notificationId, title: title, campaign: campaign)
     }
@@ -206,6 +234,61 @@ public final class DMBIAnalytics {
         shared.eventTracker?.setLoggedIn(loggedIn)
     }
 
+    /// Set user type (anonymous, logged, subscriber, premium)
+    /// - Parameter userType: The user's subscription/login status
+    public static func setUserType(_ userType: UserType) {
+        shared.eventTracker?.setUserType(userType)
+    }
+
+    // MARK: - User Segments
+
+    /// Add a user segment for cohort analysis
+    /// - Parameter segment: Segment identifier (e.g., "sports_fan", "premium_reader")
+    public static func addUserSegment(_ segment: String) {
+        shared.eventTracker?.addUserSegment(segment)
+    }
+
+    /// Remove a user segment
+    /// - Parameter segment: Segment identifier to remove
+    public static func removeUserSegment(_ segment: String) {
+        shared.eventTracker?.removeUserSegment(segment)
+    }
+
+    /// Set all user segments (replaces existing)
+    /// - Parameter segments: Set of segment identifiers
+    public static func setUserSegments(_ segments: Set<String>) {
+        shared.eventTracker?.setUserSegments(segments)
+    }
+
+    /// Clear all user segments
+    public static func clearUserSegments() {
+        shared.eventTracker?.clearUserSegments()
+    }
+
+    /// Get current user segments
+    /// - Returns: Set of segment identifiers
+    public static func getUserSegments() -> Set<String> {
+        return shared.eventTracker?.getUserSegments() ?? []
+    }
+
+    // MARK: - Conversion Tracking
+
+    /// Track a conversion event
+    /// - Parameter conversion: Conversion details
+    public static func trackConversion(_ conversion: Conversion) {
+        shared.eventTracker?.trackConversion(conversion)
+    }
+
+    /// Track a simple conversion
+    /// - Parameters:
+    ///   - id: Unique conversion identifier
+    ///   - type: Conversion type (e.g., "subscription", "registration", "purchase")
+    ///   - value: Optional conversion value (e.g., revenue amount)
+    ///   - currency: Optional currency code (e.g., "TRY", "USD")
+    public static func trackConversion(id: String, type: String, value: Double? = nil, currency: String? = nil) {
+        shared.eventTracker?.trackConversion(Conversion(id: id, type: type, value: value, currency: currency))
+    }
+
     // MARK: - Custom Events
 
     /// Track a custom event
@@ -214,6 +297,28 @@ public final class DMBIAnalytics {
     ///   - properties: Optional event properties
     public static func trackEvent(name: String, properties: [String: Any]? = nil) {
         shared.eventTracker?.trackCustomEvent(name: name, properties: properties)
+    }
+
+    // MARK: - User Interaction
+
+    /// Record user interaction (resets inactivity timer for dynamic heartbeat)
+    /// Call this on touch events, scrolls, or other user actions
+    public static func recordInteraction() {
+        shared.eventTracker?.recordInteraction()
+    }
+
+    // MARK: - Engagement Metrics
+
+    /// Get current active time in seconds (excluding background time)
+    /// - Returns: Active time in seconds
+    public static func getActiveTimeSeconds() -> Int {
+        return shared.heartbeatManager?.activeTimeSeconds ?? 0
+    }
+
+    /// Get current ping counter
+    /// - Returns: Number of heartbeats sent in current session
+    public static func getPingCounter() -> Int {
+        return shared.heartbeatManager?.currentPingCounter ?? 0
     }
 
     // MARK: - Control
