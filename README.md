@@ -1,6 +1,16 @@
 # DMBI Analytics iOS SDK
 
-Native iOS SDK for DMBI Analytics platform. Track screen views, video engagement, push notifications, and custom events.
+Native iOS SDK for DMBI Analytics platform. Track screen views, video engagement, push notifications, scroll depth, conversions, and custom events.
+
+## Features
+
+- **Heartbeat with Dynamic Intervals**: 30s base interval, increases to 120s when user is inactive
+- **Active Time Tracking**: Only counts foreground time, excludes background
+- **Scroll Depth Tracking**: UIScrollView, UITableView, UICollectionView support
+- **User Segments**: Cohort analysis with custom segments
+- **Conversion Tracking**: Track subscriptions, purchases, registrations
+- **Offline Support**: Events are queued and sent when network is available
+- **Automatic Session Management**: New session after 30 min background
 
 ## Installation
 
@@ -10,7 +20,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/dmbi-analytics/analytics-ios-sdk.git", from: "1.0.0")
+    .package(url: "https://github.com/dmbi-analytics/analytics-ios-sdk.git", from: "1.1.0")
 ]
 ```
 
@@ -19,7 +29,7 @@ Or in Xcode: File > Add Packages > Enter URL: `https://github.com/dmbi-analytics
 ### CocoaPods
 
 ```ruby
-pod 'DMBIAnalytics', '~> 1.0'
+pod 'DMBIAnalytics', '~> 1.1'
 ```
 
 ## Quick Start
@@ -46,7 +56,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ### 2. Track Screens
 
 ```swift
-// In your view controllers
 override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
     DMBIAnalytics.trackScreen(
@@ -57,7 +66,66 @@ override func viewDidAppear(_ animated: Bool) {
 }
 ```
 
-### 3. Track Videos
+### 3. Scroll Tracking
+
+```swift
+// Attach to UIScrollView, UITableView, or UICollectionView
+DMBIAnalytics.attachScrollTracking(to: tableView)
+
+// Or report manually (for SwiftUI or custom implementations)
+DMBIAnalytics.reportScrollDepth(75) // 75%
+
+// Get current scroll depth
+let depth = DMBIAnalytics.getCurrentScrollDepth()
+
+// Detach when leaving screen
+DMBIAnalytics.detachScrollTracking()
+```
+
+### 4. User Types & Segments
+
+```swift
+// Set user type
+DMBIAnalytics.setUserType(.subscriber) // .anonymous, .loggedIn, .subscriber, .premium
+
+// Add user segments for cohort analysis
+DMBIAnalytics.addUserSegment("sports_fan")
+DMBIAnalytics.addUserSegment("premium_reader")
+
+// Remove segment
+DMBIAnalytics.removeUserSegment("sports_fan")
+
+// Get all segments
+let segments = DMBIAnalytics.getUserSegments()
+```
+
+### 5. Conversion Tracking
+
+```swift
+// Simple conversion
+DMBIAnalytics.trackConversion(
+    id: "sub_123",
+    type: "subscription",
+    value: 99.99,
+    currency: "TRY"
+)
+
+// Detailed conversion with properties
+DMBIAnalytics.trackConversion(
+    Conversion(
+        id: "purchase_456",
+        type: "purchase",
+        value: 149.99,
+        currency: "TRY",
+        properties: [
+            "product_id": "prod_123",
+            "category": "premium"
+        ]
+    )
+)
+```
+
+### 6. Video Tracking
 
 ```swift
 // Video started playing
@@ -76,13 +144,6 @@ DMBIAnalytics.trackVideoProgress(
     percent: 25
 )
 
-// Video paused
-DMBIAnalytics.trackVideoPause(
-    videoId: "vid123",
-    position: 90,
-    percent: 50
-)
-
 // Video completed
 DMBIAnalytics.trackVideoComplete(
     videoId: "vid123",
@@ -90,10 +151,9 @@ DMBIAnalytics.trackVideoComplete(
 )
 ```
 
-### 4. Track Push Notifications
+### 7. Push Notifications
 
 ```swift
-// In your notification delegate
 func userNotificationCenter(_ center: UNUserNotificationCenter,
                            didReceive response: UNNotificationResponse,
                            withCompletionHandler completionHandler: @escaping () -> Void) {
@@ -109,17 +169,20 @@ func userNotificationCenter(_ center: UNUserNotificationCenter,
 }
 ```
 
-### 5. User Login State
+### 8. Engagement Metrics
 
 ```swift
-// When user logs in
-DMBIAnalytics.setLoggedIn(true)
+// Get active time (excludes background)
+let activeSeconds = DMBIAnalytics.getActiveTimeSeconds()
 
-// When user logs out
-DMBIAnalytics.setLoggedIn(false)
+// Get heartbeat count
+let pingCount = DMBIAnalytics.getPingCounter()
+
+// Record user interaction (resets inactivity timer)
+DMBIAnalytics.recordInteraction()
 ```
 
-### 6. Custom Events
+### 9. Custom Events
 
 ```swift
 DMBIAnalytics.trackEvent(
@@ -140,23 +203,77 @@ var config = DMBIConfiguration(
 )
 
 // Customize settings
-config.heartbeatInterval = 60        // Heartbeat every 60 seconds
-config.batchSize = 10                // Send events in batches of 10
-config.flushInterval = 30            // Flush every 30 seconds
-config.sessionTimeout = 30 * 60      // New session after 30 min background
-config.debugLogging = true           // Enable debug logs
+config.heartbeatInterval = 30           // Base heartbeat: 30 seconds
+config.maxHeartbeatInterval = 120       // Max when inactive: 120 seconds
+config.inactivityThreshold = 30         // Inactive after 30 seconds
+config.batchSize = 10                   // Send events in batches of 10
+config.flushInterval = 30               // Flush every 30 seconds
+config.sessionTimeout = 30 * 60         // New session after 30 min background
+config.debugLogging = true              // Enable debug logs
 
 DMBIAnalytics.configure(with: config)
 ```
 
-## Features
+## SwiftUI Support
 
-- **Automatic Session Management**: Sessions are automatically created on app launch and after 30 minutes of inactivity
-- **Persistent User ID**: User ID is stored in Keychain and persists across app reinstalls
-- **Offline Support**: Events are queued and sent when network is available
-- **Heartbeat**: Periodic heartbeats enable real-time concurrent user tracking
-- **App Lifecycle**: Automatic tracking of app open/close events
-- **Video Tracking**: Track video impressions, plays, progress, pauses, and completions
+```swift
+struct ArticleView: View {
+    let article: Article
+
+    var body: some View {
+        ScrollView {
+            // Your content
+        }
+        .onAppear {
+            DMBIAnalytics.trackScreen(
+                name: "ArticleDetail",
+                url: "app://article/\(article.id)",
+                title: article.title
+            )
+        }
+        .onDisappear {
+            DMBIAnalytics.detachScrollTracking()
+        }
+    }
+}
+
+// For scroll tracking in SwiftUI, use GeometryReader
+struct ScrollTrackingView: View {
+    var body: some View {
+        GeometryReader { geo in
+            ScrollView {
+                VStack {
+                    // Content
+                }
+                .background(
+                    GeometryReader { contentGeo in
+                        Color.clear.onChange(of: contentGeo.frame(in: .global).minY) { value in
+                            let scrollOffset = -value
+                            let contentHeight = contentGeo.size.height - geo.size.height
+                            if contentHeight > 0 {
+                                let percent = Int((scrollOffset / contentHeight) * 100)
+                                DMBIAnalytics.reportScrollDepth(percent)
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+```
+
+## Comparison with Competitors
+
+| Feature | Chartbeat | Marfeel | DMBI SDK |
+|---------|-----------|---------|----------|
+| Heartbeat | 15s | 10s | 30s (dynamic) |
+| Scroll tracking | ✅ | ✅ | ✅ |
+| Active time | ? | ✅ | ✅ |
+| Dynamic interval | ✅ | ❌ | ✅ |
+| Conversions | ❌ | ✅ | ✅ |
+| User segments | ✅ | ✅ | ✅ |
+| Offline storage | ❌ | ❌ | ✅ |
 
 ## Requirements
 
