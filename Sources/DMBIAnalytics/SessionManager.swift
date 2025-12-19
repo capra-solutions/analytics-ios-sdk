@@ -128,19 +128,18 @@ final class SessionManager {
 
     /// Get user agent string
     var userAgent: String {
-        let sdkVersion = "1.0.0"
         #if os(iOS) || os(tvOS)
         let osVersion = UIDevice.current.systemVersion
         let deviceModel = getDeviceModel()
-        return "DMBIAnalytics/\(sdkVersion) iOS/\(osVersion) (\(deviceModel))"
+        return "DMBIAnalytics/\(SDKConstants.version) iOS/\(osVersion) (\(deviceModel))"
         #elseif os(watchOS)
         let osVersion = WKInterfaceDevice.current().systemVersion
-        return "DMBIAnalytics/\(sdkVersion) watchOS/\(osVersion)"
+        return "DMBIAnalytics/\(SDKConstants.version) watchOS/\(osVersion)"
         #elseif os(macOS)
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        return "DMBIAnalytics/\(sdkVersion) macOS/\(osVersion)"
+        return "DMBIAnalytics/\(SDKConstants.version) macOS/\(osVersion)"
         #else
-        return "DMBIAnalytics/\(sdkVersion)"
+        return "DMBIAnalytics/\(SDKConstants.version)"
         #endif
     }
 
