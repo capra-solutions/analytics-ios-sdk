@@ -20,7 +20,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/dmbi-analytics/analytics-ios-sdk.git", from: "1.0.3")
+    .package(url: "https://github.com/dmbi-analytics/analytics-ios-sdk.git", from: "1.0.4")
 ]
 ```
 
@@ -29,7 +29,7 @@ Or in Xcode: File > Add Packages > Enter URL: `https://github.com/dmbi-analytics
 ### CocoaPods
 
 ```ruby
-pod 'DMBIAnalytics', '~> 1.0.3'
+pod 'DMBIAnalytics', '~> 1.0.4'
 ```
 
 ## Quick Start
@@ -127,6 +127,8 @@ DMBIAnalytics.trackConversion(
 
 ### 6. Video Tracking
 
+#### Manual Tracking
+
 ```swift
 // Video started playing
 DMBIAnalytics.trackVideoPlay(
@@ -148,6 +150,59 @@ DMBIAnalytics.trackVideoProgress(
 DMBIAnalytics.trackVideoComplete(
     videoId: "vid123",
     duration: 180
+)
+```
+
+#### Auto-Tracking with Player Wrappers
+
+SDK includes wrappers for popular video players that automatically track play, pause, progress (25%, 50%, 75%, 100%), and complete events.
+
+**AVPlayer (Native):**
+```swift
+import DMBIAnalytics
+
+let player = AVPlayer(url: videoURL)
+let wrapper = AVPlayerWrapper(player: player)
+wrapper.attach(
+    videoId: "vid123",
+    title: "Video Title"
+)
+
+// When done:
+wrapper.detach()
+```
+
+**YouTube Player:**
+```swift
+// Add pod: pod 'youtube-ios-player-helper'
+
+import DMBIAnalytics
+
+class VideoViewController: UIViewController {
+    @IBOutlet weak var playerView: YTPlayerView!
+    private var wrapper: YouTubePlayerWrapper?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        wrapper = YouTubePlayerWrapper(playerView: playerView)
+        wrapper?.attach(videoId: "dQw4w9WgXcQ", title: "Video Title")
+        playerView.delegate = wrapper
+        playerView.load(withVideoId: "dQw4w9WgXcQ")
+    }
+}
+```
+
+**Dailymotion Player:**
+```swift
+// Add pod: pod 'DailymotionPlayerSDK'
+
+import DMBIAnalytics
+
+let playerViewController = DMPlayerViewController()
+let wrapper = DailymotionPlayerWrapper(player: playerViewController)
+wrapper.attach(
+    videoId: "x8abc123",
+    title: "Video Title"
 )
 ```
 
