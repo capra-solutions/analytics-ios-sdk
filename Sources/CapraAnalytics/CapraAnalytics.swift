@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 #endif
 
-/// DMBI Analytics SDK for iOS
+/// Capra Analytics SDK for iOS
 /// Tracks user activity, screen views, video engagement, and push notifications
 ///
 /// Features:
@@ -14,11 +14,11 @@ import UIKit
 /// - Conversion tracking
 /// - Offline event storage
 /// - Event batching
-public final class DMBIAnalytics {
+public final class CapraAnalytics {
     /// Shared instance
-    public static let shared = DMBIAnalytics()
+    public static let shared = CapraAnalytics()
 
-    private var config: DMBIConfiguration?
+    private var config: CapraConfiguration?
     private var sessionManager: SessionManager?
     private var networkQueue: NetworkQueue?
     private var offlineStore: OfflineStore?
@@ -36,22 +36,22 @@ public final class DMBIAnalytics {
     /// Configure the SDK with site ID and endpoint
     /// - Parameters:
     ///   - siteId: Your site identifier (e.g., "hurriyet-ios")
-    ///   - endpoint: Analytics endpoint URL (e.g., "https://realtime.dmbi.site/e")
+    ///   - endpoint: Analytics endpoint URL (e.g., "https://t.capra.solutions/e")
     public static func configure(siteId: String, endpoint: String) {
-        let config = DMBIConfiguration(siteId: siteId, endpoint: endpoint)
+        let config = CapraConfiguration(siteId: siteId, endpoint: endpoint)
         shared.configure(with: config)
     }
 
     /// Configure the SDK with a custom configuration
-    /// - Parameter config: DMBIConfiguration instance
-    public static func configure(with config: DMBIConfiguration) {
+    /// - Parameter config: CapraConfiguration instance
+    public static func configure(with config: CapraConfiguration) {
         shared.configure(with: config)
     }
 
-    private func configure(with config: DMBIConfiguration) {
+    private func configure(with config: CapraConfiguration) {
         guard !isConfigured else {
             if config.debugLogging {
-                print("[DMBIAnalytics] Already configured. Ignoring duplicate configuration.")
+                print("[CapraAnalytics] Already configured. Ignoring duplicate configuration.")
             }
             return
         }
@@ -109,7 +109,7 @@ public final class DMBIAnalytics {
         isConfigured = true
 
         if config.debugLogging {
-            print("[DMBIAnalytics] Configured with siteId: \(config.siteId), heartbeat: \(config.heartbeatInterval)s")
+            print("[CapraAnalytics] Configured with siteId: \(config.siteId), heartbeat: \(config.heartbeatInterval)s")
         }
     }
 

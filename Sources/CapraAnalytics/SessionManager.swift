@@ -8,10 +8,10 @@ import Security
 
 /// Manages session and user identifiers
 final class SessionManager {
-    private let keychainService = "site.dmbi.analytics"
-    private let userIdKey = "dmbi_user_id"
-    private let sessionIdKey = "dmbi_session_id"
-    private let lastActiveKey = "dmbi_last_active"
+    private let keychainService = "solutions.capra.analytics"
+    private let userIdKey = "capra_user_id"
+    private let sessionIdKey = "capra_session_id"
+    private let lastActiveKey = "capra_last_active"
 
     private var _sessionId: String?
     private var _userId: String?
@@ -131,15 +131,15 @@ final class SessionManager {
         #if os(iOS) || os(tvOS)
         let osVersion = UIDevice.current.systemVersion
         let deviceModel = getDeviceModel()
-        return "DMBIAnalytics/\(SDKConstants.version) iOS/\(osVersion) (\(deviceModel))"
+        return "CapraAnalytics/\(SDKConstants.version) iOS/\(osVersion) (\(deviceModel))"
         #elseif os(watchOS)
         let osVersion = WKInterfaceDevice.current().systemVersion
-        return "DMBIAnalytics/\(SDKConstants.version) watchOS/\(osVersion)"
+        return "CapraAnalytics/\(SDKConstants.version) watchOS/\(osVersion)"
         #elseif os(macOS)
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
-        return "DMBIAnalytics/\(SDKConstants.version) macOS/\(osVersion)"
+        return "CapraAnalytics/\(SDKConstants.version) macOS/\(osVersion)"
         #else
-        return "DMBIAnalytics/\(SDKConstants.version)"
+        return "CapraAnalytics/\(SDKConstants.version)"
         #endif
     }
 

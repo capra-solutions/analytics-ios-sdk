@@ -11,7 +11,7 @@ final class NetworkQueue {
 
     private var eventQueue: [AnalyticsEvent] = []
     private var flushTimer: Timer?
-    private let queue = DispatchQueue(label: "site.dmbi.analytics.network", qos: .utility)
+    private let queue = DispatchQueue(label: "solutions.capra.analytics.network", qos: .utility)
     private let urlSession: URLSession
 
     private var offlineStore: OfflineStore?
@@ -78,7 +78,7 @@ final class NetworkQueue {
             request.httpBody = data
 
             if debugLogging {
-                print("[DMBIAnalytics] Sending \(events.count) events to \(endpoint)")
+                print("[CapraAnalytics] Sending \(events.count) events to \(endpoint)")
             }
 
             let task = urlSession.dataTask(with: request) { [weak self] data, response, error in
@@ -86,7 +86,7 @@ final class NetworkQueue {
 
                 if let error = error {
                     if self.debugLogging {
-                        print("[DMBIAnalytics] Network error: \(error.localizedDescription)")
+                        print("[CapraAnalytics] Network error: \(error.localizedDescription)")
                     }
                     // Store events offline for retry
                     self.storeOffline(events)
@@ -100,11 +100,11 @@ final class NetworkQueue {
 
                 if httpResponse.statusCode == 202 {
                     if self.debugLogging {
-                        print("[DMBIAnalytics] Successfully sent \(events.count) events")
+                        print("[CapraAnalytics] Successfully sent \(events.count) events")
                     }
                 } else {
                     if self.debugLogging {
-                        print("[DMBIAnalytics] Server returned status \(httpResponse.statusCode)")
+                        print("[CapraAnalytics] Server returned status \(httpResponse.statusCode)")
                     }
                     if httpResponse.statusCode >= 500 {
                         // Server error - retry later
@@ -117,7 +117,7 @@ final class NetworkQueue {
 
         } catch {
             if debugLogging {
-                print("[DMBIAnalytics] Failed to encode events: \(error)")
+                print("[CapraAnalytics] Failed to encode events: \(error)")
             }
         }
     }
@@ -138,7 +138,7 @@ final class NetworkQueue {
         guard !storedEvents.isEmpty else { return }
 
         if debugLogging {
-            print("[DMBIAnalytics] Retrying \(storedEvents.count) offline events")
+            print("[CapraAnalytics] Retrying \(storedEvents.count) offline events")
         }
 
         let events = storedEvents.map { $0.event }

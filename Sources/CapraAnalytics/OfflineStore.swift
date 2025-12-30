@@ -5,7 +5,7 @@ final class OfflineStore {
     private let fileURL: URL
     private let maxEvents: Int
     private let retentionDays: Int
-    private let queue = DispatchQueue(label: "site.dmbi.analytics.offline", qos: .utility)
+    private let queue = DispatchQueue(label: "solutions.capra.analytics.offline", qos: .utility)
 
     private var events: [StoredEvent] = []
 
@@ -15,7 +15,7 @@ final class OfflineStore {
 
         // Store in Application Support directory
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let analyticsDir = appSupport.appendingPathComponent("DMBIAnalytics", isDirectory: true)
+        let analyticsDir = appSupport.appendingPathComponent("CapraAnalytics", isDirectory: true)
 
         // Create directory if needed
         try? FileManager.default.createDirectory(at: analyticsDir, withIntermediateDirectories: true)

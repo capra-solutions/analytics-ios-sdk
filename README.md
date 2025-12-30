@@ -1,6 +1,6 @@
-# DMBI Analytics iOS SDK
+# Capra Analytics iOS SDK
 
-Native iOS SDK for DMBI Analytics platform. Track screen views, video engagement, push notifications, scroll depth, conversions, and custom events.
+Native iOS SDK for Capra Analytics platform. Track screen views, video engagement, push notifications, scroll depth, conversions, and custom events.
 
 ## Features
 
@@ -20,32 +20,43 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/dmbi-analytics/analytics-ios-sdk.git", from: "1.0.9")
+    .package(url: "https://github.com/capra-solutions/analytics-ios-sdk.git", from: "2.0.0")
 ]
 ```
 
-Or in Xcode: File > Add Packages > Enter URL: `https://github.com/dmbi-analytics/analytics-ios-sdk.git`
+Or in Xcode: File > Add Packages > Enter URL: `https://github.com/capra-solutions/analytics-ios-sdk.git`
 
 ### CocoaPods
 
 ```ruby
-pod 'DMBIAnalytics', '~> 1.0.9'
+pod 'CapraAnalytics', '~> 2.0.0'
 ```
+
+## Migration from DMBIAnalytics 1.x
+
+If upgrading from version 1.x:
+
+1. Update import: `import DMBIAnalytics` -> `import CapraAnalytics`
+2. Rename class: `DMBIAnalytics` -> `CapraAnalytics`
+3. Rename config: `DMBIConfiguration` -> `CapraConfiguration`
+4. Update endpoint: `https://realtime.dmbi.site/e` -> `https://t.capra.solutions/e`
+
+Note: Storage keys have changed, so user sessions will be reset after upgrade.
 
 ## Quick Start
 
 ### 1. Initialize in AppDelegate
 
 ```swift
-import DMBIAnalytics
+import CapraAnalytics
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
-        DMBIAnalytics.configure(
+        CapraAnalytics.configure(
             siteId: "your-site-ios",
-            endpoint: "https://realtime.dmbi.site/e"
+            endpoint: "https://t.capra.solutions/e"
         )
 
         return true
@@ -58,7 +69,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ```swift
 override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
-    DMBIAnalytics.trackScreen(
+    CapraAnalytics.trackScreen(
         name: "ArticleDetail",
         url: "app://article/\(articleId)",
         title: article.title
@@ -70,40 +81,40 @@ override func viewDidAppear(_ animated: Bool) {
 
 ```swift
 // Attach to UIScrollView, UITableView, or UICollectionView
-DMBIAnalytics.attachScrollTracking(to: tableView)
+CapraAnalytics.attachScrollTracking(to: tableView)
 
 // Or report manually (for SwiftUI or custom implementations)
-DMBIAnalytics.reportScrollDepth(75) // 75%
+CapraAnalytics.reportScrollDepth(75) // 75%
 
 // Get current scroll depth
-let depth = DMBIAnalytics.getCurrentScrollDepth()
+let depth = CapraAnalytics.getCurrentScrollDepth()
 
 // Detach when leaving screen
-DMBIAnalytics.detachScrollTracking()
+CapraAnalytics.detachScrollTracking()
 ```
 
 ### 4. User Types & Segments
 
 ```swift
 // Set user type
-DMBIAnalytics.setUserType(.subscriber) // .anonymous, .loggedIn, .subscriber, .premium
+CapraAnalytics.setUserType(.subscriber) // .anonymous, .loggedIn, .subscriber, .premium
 
 // Add user segments for cohort analysis
-DMBIAnalytics.addUserSegment("sports_fan")
-DMBIAnalytics.addUserSegment("premium_reader")
+CapraAnalytics.addUserSegment("sports_fan")
+CapraAnalytics.addUserSegment("premium_reader")
 
 // Remove segment
-DMBIAnalytics.removeUserSegment("sports_fan")
+CapraAnalytics.removeUserSegment("sports_fan")
 
 // Get all segments
-let segments = DMBIAnalytics.getUserSegments()
+let segments = CapraAnalytics.getUserSegments()
 ```
 
 ### 5. Conversion Tracking
 
 ```swift
 // Simple conversion
-DMBIAnalytics.trackConversion(
+CapraAnalytics.trackConversion(
     id: "sub_123",
     type: "subscription",
     value: 99.99,
@@ -111,7 +122,7 @@ DMBIAnalytics.trackConversion(
 )
 
 // Detailed conversion with properties
-DMBIAnalytics.trackConversion(
+CapraAnalytics.trackConversion(
     Conversion(
         id: "purchase_456",
         type: "purchase",
@@ -131,7 +142,7 @@ DMBIAnalytics.trackConversion(
 
 ```swift
 // Video started playing
-DMBIAnalytics.trackVideoPlay(
+CapraAnalytics.trackVideoPlay(
     videoId: "vid123",
     title: "Video Title",
     duration: 180,
@@ -139,7 +150,7 @@ DMBIAnalytics.trackVideoPlay(
 )
 
 // Video progress (quartiles)
-DMBIAnalytics.trackVideoProgress(
+CapraAnalytics.trackVideoProgress(
     videoId: "vid123",
     duration: 180,
     position: 45,
@@ -147,7 +158,7 @@ DMBIAnalytics.trackVideoProgress(
 )
 
 // Video completed
-DMBIAnalytics.trackVideoComplete(
+CapraAnalytics.trackVideoComplete(
     videoId: "vid123",
     duration: 180
 )
@@ -159,7 +170,7 @@ SDK includes wrappers for popular video players that automatically track play, p
 
 **AVPlayer (Native):**
 ```swift
-import DMBIAnalytics
+import CapraAnalytics
 
 let player = AVPlayer(url: videoURL)
 let wrapper = AVPlayerWrapper(player: player)
@@ -176,7 +187,7 @@ wrapper.detach()
 ```swift
 // Add pod: pod 'youtube-ios-player-helper'
 
-import DMBIAnalytics
+import CapraAnalytics
 
 class VideoViewController: UIViewController {
     @IBOutlet weak var playerView: YTPlayerView!
@@ -196,7 +207,7 @@ class VideoViewController: UIViewController {
 ```swift
 // Add pod: pod 'DailymotionPlayerSDK'
 
-import DMBIAnalytics
+import CapraAnalytics
 
 let playerViewController = DMPlayerViewController()
 let wrapper = DailymotionPlayerWrapper(player: playerViewController)
@@ -214,7 +225,7 @@ func userNotificationCenter(_ center: UNUserNotificationCenter,
                            withCompletionHandler completionHandler: @escaping () -> Void) {
     let userInfo = response.notification.request.content.userInfo
 
-    DMBIAnalytics.trackPushOpened(
+    CapraAnalytics.trackPushOpened(
         notificationId: userInfo["notification_id"] as? String,
         title: response.notification.request.content.title,
         campaign: userInfo["campaign"] as? String
@@ -228,19 +239,19 @@ func userNotificationCenter(_ center: UNUserNotificationCenter,
 
 ```swift
 // Get active time (excludes background)
-let activeSeconds = DMBIAnalytics.getActiveTimeSeconds()
+let activeSeconds = CapraAnalytics.getActiveTimeSeconds()
 
 // Get heartbeat count
-let pingCount = DMBIAnalytics.getPingCounter()
+let pingCount = CapraAnalytics.getPingCounter()
 
 // Record user interaction (resets inactivity timer)
-DMBIAnalytics.recordInteraction()
+CapraAnalytics.recordInteraction()
 ```
 
 ### 9. Custom Events
 
 ```swift
-DMBIAnalytics.trackEvent(
+CapraAnalytics.trackEvent(
     name: "article_share",
     properties: [
         "article_id": "12345",
@@ -252,9 +263,9 @@ DMBIAnalytics.trackEvent(
 ## Advanced Configuration
 
 ```swift
-var config = DMBIConfiguration(
+var config = CapraConfiguration(
     siteId: "your-site-ios",
-    endpoint: "https://realtime.dmbi.site/e"
+    endpoint: "https://t.capra.solutions/e"
 )
 
 // Customize settings
@@ -266,7 +277,7 @@ config.flushInterval = 30               // Flush every 30 seconds
 config.sessionTimeout = 30 * 60         // New session after 30 min background
 config.debugLogging = true              // Enable debug logs
 
-DMBIAnalytics.configure(with: config)
+CapraAnalytics.configure(with: config)
 ```
 
 ## SwiftUI Support
@@ -280,14 +291,14 @@ struct ArticleView: View {
             // Your content
         }
         .onAppear {
-            DMBIAnalytics.trackScreen(
+            CapraAnalytics.trackScreen(
                 name: "ArticleDetail",
                 url: "app://article/\(article.id)",
                 title: article.title
             )
         }
         .onDisappear {
-            DMBIAnalytics.detachScrollTracking()
+            CapraAnalytics.detachScrollTracking()
         }
     }
 }
@@ -307,7 +318,7 @@ struct ScrollTrackingView: View {
                             let contentHeight = contentGeo.size.height - geo.size.height
                             if contentHeight > 0 {
                                 let percent = Int((scrollOffset / contentHeight) * 100)
-                                DMBIAnalytics.reportScrollDepth(percent)
+                                CapraAnalytics.reportScrollDepth(percent)
                             }
                         }
                     }
@@ -320,15 +331,15 @@ struct ScrollTrackingView: View {
 
 ## Comparison with Competitors
 
-| Feature | Chartbeat | Marfeel | DMBI SDK |
-|---------|-----------|---------|----------|
+| Feature | Chartbeat | Marfeel | Capra SDK |
+|---------|-----------|---------|-----------|
 | Heartbeat | 15s | 10s | 30s (dynamic) |
-| Scroll tracking | ✅ | ✅ | ✅ |
-| Active time | ? | ✅ | ✅ |
-| Dynamic interval | ✅ | ❌ | ✅ |
-| Conversions | ❌ | ✅ | ✅ |
-| User segments | ✅ | ✅ | ✅ |
-| Offline storage | ❌ | ❌ | ✅ |
+| Scroll tracking | Yes | Yes | Yes |
+| Active time | ? | Yes | Yes |
+| Dynamic interval | Yes | No | Yes |
+| Conversions | No | Yes | Yes |
+| User segments | Yes | Yes | Yes |
+| Offline storage | No | No | Yes |
 
 ## Requirements
 

@@ -1,7 +1,7 @@
 import Foundation
 
 /// SDK configuration
-public struct DMBIConfiguration {
+public struct CapraConfiguration {
     /// Site identifier (e.g., "hurriyet-ios", "cnnturk-ios")
     public let siteId: String
 

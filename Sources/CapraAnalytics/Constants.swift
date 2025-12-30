@@ -2,5 +2,5 @@ import Foundation
 
 /// SDK-wide constants
 internal enum SDKConstants {
-    static let version = "1.0.3"
+    static let version = "2.0.0"
 }

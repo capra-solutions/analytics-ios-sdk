@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "DMBIAnalytics",
+    name: "CapraAnalytics",
     platforms: [
         .iOS(.v13),
         .tvOS(.v13),
@@ -13,18 +13,18 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "DMBIAnalytics",
-            targets: ["DMBIAnalytics"]),
+            name: "CapraAnalytics",
+            targets: ["CapraAnalytics"]),
     ],
     dependencies: [],
     targets: [
         .target(
-            name: "DMBIAnalytics",
+            name: "CapraAnalytics",
             dependencies: [],
-            path: "Sources/DMBIAnalytics"),
+            path: "Sources/CapraAnalytics"),
         .testTarget(
-            name: "DMBIAnalyticsTests",
-            dependencies: ["DMBIAnalytics"],
-            path: "Tests/DMBIAnalyticsTests"),
+            name: "CapraAnalyticsTests",
+            dependencies: ["CapraAnalytics"],
+            path: "Tests/CapraAnalyticsTests"),
     ]
 )

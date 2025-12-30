@@ -7,7 +7,7 @@ import WatchKit
 
 /// Core event tracking functionality
 final class EventTracker {
-    private let config: DMBIConfiguration
+    private let config: CapraConfiguration
     private let sessionManager: SessionManager
     private let networkQueue: NetworkQueue
 
@@ -38,7 +38,7 @@ final class EventTracker {
     // Heartbeat manager reference (for interaction recording)
     private weak var heartbeatManager: HeartbeatManager?
 
-    init(config: DMBIConfiguration, sessionManager: SessionManager, networkQueue: NetworkQueue) {
+    init(config: CapraConfiguration, sessionManager: SessionManager, networkQueue: NetworkQueue) {
         self.config = config
         self.sessionManager = sessionManager
         self.networkQueue = networkQueue
@@ -506,7 +506,7 @@ final class EventTracker {
         networkQueue.enqueue(event)
 
         if config.debugLogging {
-            print("[DMBIAnalytics] Event: \(event.eventType) - \(event.pageUrl)")
+            print("[CapraAnalytics] Event: \(event.eventType) - \(event.pageUrl)")
         }
     }
 }
