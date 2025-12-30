@@ -240,6 +240,11 @@ extension DailymotionPlayerWrapper: DMPlayerDelegate {
         // Player ended
     }
 
+    public func player(_ player: DMPlayerView, didChangeVideo videoId: String?) {
+        // New video loaded (including auto-play)
+        checkForVideoChange()
+    }
+
     public func player(_ player: DMPlayerView, didFailWithError error: Error) {
         // Handle error if needed
     }
