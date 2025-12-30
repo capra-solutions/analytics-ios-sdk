@@ -20,7 +20,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/capra-solutions/analytics-ios-sdk.git", from: "2.0.1")
+    .package(url: "https://github.com/capra-solutions/analytics-ios-sdk.git", from: "3.0.0")
 ]
 ```
 
@@ -36,6 +36,16 @@ If upgrading from version 1.x:
 4. Update endpoint: `https://realtime.dmbi.site/e` -> `https://t.capra.solutions/e`
 
 Note: Storage keys have changed, so user sessions will be reset after upgrade.
+
+## Migration from 2.x to 3.0.0
+
+Version 3.0.0 includes a breaking change for Dailymotion player integration:
+
+1. **Update Dailymotion SDK**: `DailymotionPlayerSDK` → `DailymotionPlayerSDK-iOS` (or SPM)
+2. **Update player initialization**: `DMPlayerViewController` → `DMPlayerView`
+3. **Wrapper uses new delegate pattern**: `DMVideoDelegate` + `DMPlayerDelegate`
+
+If you're not using DailymotionPlayerWrapper, no changes are needed.
 
 ## Quick Start
 
@@ -199,17 +209,27 @@ class VideoViewController: UIViewController {
 
 **Dailymotion Player:**
 ```swift
-// Add pod: pod 'DailymotionPlayerSDK'
+// Requires new Dailymotion SDK: pod 'DailymotionPlayerSDK-iOS' or SPM
 
 import CapraAnalytics
 
-let playerViewController = DMPlayerViewController()
-let wrapper = DailymotionPlayerWrapper(player: playerViewController)
-wrapper.attach(
-    videoId: "x8abc123",
-    title: "Video Title"
-)
+// Create player using Dailymotion SDK
+Dailymotion.createPlayer(
+    playerId: "YOUR_PLAYER_ID",
+    videoId: "x8abc123"
+) { result in
+    switch result {
+    case .success(let player):
+        let wrapper = DailymotionPlayerWrapper(player: player)
+        wrapper.attach(videoId: "x8abc123", title: "Video Title")
+        // Add player view to hierarchy
+    case .failure(let error):
+        print("Error: \(error)")
+    }
+}
 ```
+
+> **Auto-play Support:** The wrapper automatically detects video changes (including auto-play) and tracks each video with the correct video ID using the `getState()` API.
 
 ### 7. Push Notifications
 
