@@ -16,7 +16,7 @@ final class LifecycleTracker {
         self.sessionTimeout = sessionTimeout
     }
 
-    func configure(tracker: EventTracker, sessionManager: SessionManager, heartbeatManager: HeartbeatManager) {
+    func configure(tracker: EventTracker, sessionManager: SessionManager, heartbeatManager: HeartbeatManager?) {
         self.tracker = tracker
         self.sessionManager = sessionManager
         self.heartbeatManager = heartbeatManager

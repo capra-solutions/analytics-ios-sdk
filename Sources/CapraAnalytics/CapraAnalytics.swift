@@ -86,30 +86,34 @@ public final class CapraAnalytics {
         )
         eventTracker?.setScrollTracker(scrollTracker!)
 
-        heartbeatManager = HeartbeatManager(
-            interval: config.heartbeatInterval,
-            maxInterval: config.maxHeartbeatInterval,
-            inactivityThreshold: config.inactivityThreshold
-        )
-        heartbeatManager?.setTracker(eventTracker!)
-
-        // Connect heartbeat manager to event tracker for interaction recording
-        eventTracker?.setHeartbeatManager(heartbeatManager!)
+        // Only initialize heartbeat if enabled (disabled by default)
+        if config.heartbeatEnabled {
+            heartbeatManager = HeartbeatManager(
+                interval: config.heartbeatInterval,
+                maxInterval: config.maxHeartbeatInterval,
+                inactivityThreshold: config.inactivityThreshold
+            )
+            heartbeatManager?.setTracker(eventTracker!)
+            eventTracker?.setHeartbeatManager(heartbeatManager!)
+        }
 
         lifecycleTracker = LifecycleTracker(sessionTimeout: config.sessionTimeout)
         lifecycleTracker?.configure(
             tracker: eventTracker!,
             sessionManager: sessionManager!,
-            heartbeatManager: heartbeatManager!
+            heartbeatManager: heartbeatManager
         )
 
-        // Start heartbeat
-        heartbeatManager?.start()
+        // Start heartbeat only if enabled
+        if config.heartbeatEnabled {
+            heartbeatManager?.start()
+        }
 
         isConfigured = true
 
         if config.debugLogging {
-            print("[CapraAnalytics] Configured with siteId: \(config.siteId), heartbeat: \(config.heartbeatInterval)s")
+            let heartbeatStatus = config.heartbeatEnabled ? "\(config.heartbeatInterval)s" : "disabled"
+            print("[CapraAnalytics] Configured with siteId: \(config.siteId), heartbeat: \(heartbeatStatus)")
         }
     }
 

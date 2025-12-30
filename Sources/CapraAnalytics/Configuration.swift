@@ -8,7 +8,11 @@ public struct CapraConfiguration {
     /// Analytics endpoint URL
     public let endpoint: URL
 
-    /// Heartbeat interval in seconds (default: 30)
+    /// Enable heartbeat tracking (default: false - disabled)
+    /// Heartbeat is not needed as concurrent users are calculated from pageview events
+    public var heartbeatEnabled: Bool = false
+
+    /// Heartbeat interval in seconds (default: 30, only used if heartbeatEnabled is true)
     public var heartbeatInterval: TimeInterval = 30
 
     /// Maximum heartbeat interval when user is inactive (default: 120)
