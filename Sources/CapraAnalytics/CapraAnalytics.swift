@@ -36,7 +36,7 @@ public final class CapraAnalytics {
     /// Configure the SDK with site ID and endpoint
     /// - Parameters:
     ///   - siteId: Your site identifier (e.g., "hurriyet-ios")
-    ///   - endpoint: Analytics endpoint URL (e.g., "https://t.capra.solutions/e")
+    ///   - endpoint: Analytics endpoint URL (e.g., "https://analytics-ingestion.demirorenmedya.com/e")
     public static func configure(siteId: String, endpoint: String) {
         let config = CapraConfiguration(siteId: siteId, endpoint: endpoint)
         shared.configure(with: config)

@@ -43,7 +43,7 @@ If upgrading from version 1.x:
 1. Update import: `import DMBIAnalytics` -> `import CapraAnalytics`
 2. Rename class: `DMBIAnalytics` -> `CapraAnalytics`
 3. Rename config: `DMBIConfiguration` -> `CapraConfiguration`
-4. Update endpoint: `https://realtime.dmbi.site/e` -> `https://t.capra.solutions/e`
+4. Update endpoint: `https://realtime.dmbi.site/e` veya `https://t.capra.solutions/e` -> `https://analytics-ingestion.demirorenmedya.com/e`
 
 Note: Storage keys have changed, so user sessions will be reset after upgrade.
 
@@ -86,7 +86,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         CapraAnalytics.configure(
             siteId: "your-site-ios",
-            endpoint: "https://t.capra.solutions/e"
+            endpoint: "https://analytics-ingestion.demirorenmedya.com/e"
         )
 
         return true
@@ -315,7 +315,7 @@ CapraAnalytics.trackEvent(
 ```swift
 var config = CapraConfiguration(
     siteId: "your-site-ios",
-    endpoint: "https://t.capra.solutions/e"
+    endpoint: "https://analytics-ingestion.demirorenmedya.com/e"
 )
 
 // Customize settings
