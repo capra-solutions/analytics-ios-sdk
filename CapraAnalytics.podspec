@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'CapraAnalytics'
-  s.version          = '2.5.5'
+  s.version          = '3.2.0'
   s.summary          = 'Native iOS SDK for Capra Analytics platform'
   s.description      = <<-DESC
 Native iOS SDK for Capra Analytics platform. Track screen views, video engagement,

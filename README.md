@@ -73,6 +73,111 @@ DailymotionPlayerWrapper(player: player, presentingViewController: self)
 
 The `presentingViewController` is required for fullscreen playback and ad presentation.
 
+## Kıble & Kuran Entegrasyonu
+
+Kıble modülü ekranlarının analytics'e gönderilmesi için her ekranda `trackScreen` çağrısı yapılmalıdır. URL formatı **Android ile aynı** olmalıdır.
+
+### URL Formatı
+
+| Ekran | URL | Title |
+|-------|-----|-------|
+| Ana Sayfa | `https://www.{domain}/kible/anasayfa` | Kible |
+| Seccade | `https://www.{domain}/kible/seccade` | Seccade |
+| Vakitler | `https://www.{domain}/kible/vakitler` | Namaz Vakitleri |
+| Sure | `https://www.{domain}/kible/sure` | Sure Oku |
+| Pusula | `https://www.{domain}/kible/pusula` | Kible Pusulasi |
+| Harita | `https://www.{domain}/kible/harita` | Kible Haritasi |
+| Menu | `https://www.{domain}/kible/menu` | Menu |
+| Cüz | `https://www.{domain}/kible/cuz` | Cuz Oku |
+| Takvim | `https://www.{domain}/kible/takvim` | Takvim |
+| Kaydedilen | `https://www.{domain}/kible/kaydedilen` | Kaydedilen |
+| 99 İsim | `https://www.{domain}/kible/99ismi` | 99 Isim |
+| Hadisler | `https://www.{domain}/kible/hadisler` | Hadisler |
+| Zikir | `https://www.{domain}/kible/zikir` | Zikir |
+| Cuma Mesajları | `https://www.{domain}/kible/cuma-mesajlari` | Cuma Mesajlari |
+
+> **domain** marka bazlıdır: `hurriyet.com.tr`, `cnnturk.com`, `fanatik.com.tr`, `posta.com.tr`
+
+### SwiftUI (Önerilen)
+
+```swift
+import CapraAnalytics
+
+struct KibleVakitlerView: View {
+    let domain = "hurriyet.com.tr" // Marka bazlı
+
+    var body: some View {
+        VStack {
+            // Vakitler içeriği
+        }
+        .capraScreen(
+            name: "kible_vakitler",
+            url: "https://www.\(domain)/kible/vakitler",
+            title: "Namaz Vakitleri"
+        )
+    }
+}
+```
+
+### UIKit
+
+```swift
+import CapraAnalytics
+
+class KibleVakitlerViewController: UIViewController {
+    let domain = "hurriyet.com.tr"
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        CapraAnalytics.trackScreen(
+            name: "kible_vakitler",
+            url: "https://www.\(domain)/kible/vakitler",
+            title: "Namaz Vakitleri"
+        )
+    }
+}
+```
+
+### Tüm Ekranları Tek Helper ile Yönetme
+
+```swift
+enum KibleScreen: String {
+    case anasayfa, seccade, vakitler, sure, pusula, harita
+    case menu, cuz, takvim, kaydedilen, isimler = "99ismi"
+    case hadisler, zikir, cumaMesajlari = "cuma-mesajlari"
+
+    var title: String {
+        switch self {
+        case .anasayfa: return "Kible"
+        case .seccade: return "Seccade"
+        case .vakitler: return "Namaz Vakitleri"
+        case .sure: return "Sure Oku"
+        case .pusula: return "Kible Pusulasi"
+        case .harita: return "Kible Haritasi"
+        case .menu: return "Menu"
+        case .cuz: return "Cuz Oku"
+        case .takvim: return "Takvim"
+        case .kaydedilen: return "Kaydedilen"
+        case .isimler: return "99 Isim"
+        case .hadisler: return "Hadisler"
+        case .zikir: return "Zikir"
+        case .cumaMesajlari: return "Cuma Mesajlari"
+        }
+    }
+
+    func track(domain: String) {
+        CapraAnalytics.trackScreen(
+            name: "kible_\(rawValue)",
+            url: "https://www.\(domain)/kible/\(rawValue)",
+            title: title
+        )
+    }
+}
+
+// Kullanım:
+KibleScreen.vakitler.track(domain: "hurriyet.com.tr")
+```
+
 ## Quick Start
 
 ### 1. Initialize in AppDelegate
